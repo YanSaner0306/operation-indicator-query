@@ -25,8 +25,8 @@ def close(actual, expected, tolerance=1e-8):
 def main() -> int:
     service = OperationQueryService()
     doctor = service.doctor()
-    expect(doctor["platform"] == "ok" and doctor["database"] == "ok", "平台和数据库连通")
-    expect(doctor["observationCount"] == 4719, "观测记录数为 4719")
+    expect(doctor["platform"] == "ok" and doctor["dataAccess"] == "platform-managed", "平台 API 和平台托管数据访问连通")
+    expect(len(doctor["ontologies"]) == 3, "三个运管本体各有唯一启用 Binding")
 
     full = service.query("四川省蜀盛产业投资集团有限公司", "净资产收益率", "2026-07", "current_value")
     expect(full["indicator_code"] == "IND_095" and close(full["value"], 53.9), "企业全称 + 指标别名查询本期值")
@@ -52,7 +52,7 @@ def main() -> int:
         expect(exc.code == "OBJECT_NOT_FOUND", "参数化查询抵御注入样式输入")
 
     after = service.doctor()
-    expect(after["observationCount"] == 4719, "异常输入后数据完整")
+    expect(after["platform"] == "ok", "异常输入后平台状态正常")
     print("ACCEPTANCE PASSED")
     return 0
 

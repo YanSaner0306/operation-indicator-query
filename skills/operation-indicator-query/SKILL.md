@@ -5,7 +5,7 @@ description: 通过业务本体推理平台的 API Key 和启用 Binding，只�
 
 # 运管指标查询
 
-使用本 Skill 回答管控对象、指标和期间相关的运管数据问题。平台是本体和 Binding 白名单的事实来源，业务数据库只执行参数化只读查询。
+使用本 Skill 回答管控对象、指标和期间相关的运管数据问题。平台是本体、Binding 和业务数据查询的事实来源；Skill 只调用平台 API，不连接业务数据库。
 
 ## 查询流程
 
@@ -24,10 +24,10 @@ python scripts/query.py query --object "0" --indicator "IND_095" --period "2026-
 ## 运行约束
 
 - 禁止接受或拼接用户提供的 SQL、表名、字段名、排序或表达式。
-- 表名和字段名只能来自平台中名称匹配且状态为 `ENABLED` 的 Binding。
-- API Key 与数据库密码只从 Windows DPAPI 凭据或运行时环境变量读取，不得写入答案、日志或仓库。
-- Windows DPAPI 凭据绑定于配置它的桌面用户。Codex 新任务运行 `doctor`、`query` 或 `acceptance.py` 时，必须对该脚本请求授权提升，以同一 Windows 用户身份执行。若普通沙箱执行返回 `CREDENTIAL_REQUIRES_ELEVATION`，立即用授权提升重跑同一命令，不得报告为“没有数据”。
+- Skill 只从运行时环境变量或本地 API Key 文件读取平台 API Key，不读取业务数据库用户名、密码或 JDBC 凭据。
+- 业务表、视图、字段和 SQL 只由平台服务端的 DataSource/Binding 配置使用，Skill 不接收、不拼接也不记录这些信息。
+- 查询接口要求 API Client 同时具备 `ONTOLOGY_VIEW` 和 `BINDING_VIEW` 权限。
 - 不自动运行 `sync_mock_data.py`。只有用户明确要求同步测试数据时才可执行。
 - 查询失败时先运行 `python scripts/query.py doctor --json`，不要绕过 Binding 直接猜测表结构。
 
-需要理解本体、Binding 和数据库字段时读取 [references/schema.md](references/schema.md)。需要执行或扩展验收时读取 [references/acceptance.md](references/acceptance.md)。
+需要理解本体、Binding 和平台数据访问边界时读取 [references/schema.md](references/schema.md)。需要执行或扩展验收时读取 [references/acceptance.md](references/acceptance.md)。

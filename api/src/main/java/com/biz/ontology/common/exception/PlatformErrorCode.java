@@ -80,6 +80,7 @@ public enum PlatformErrorCode {
     BINDING_ENABLED_EDIT_FORBIDDEN(40952, HttpStatus.CONFLICT, "已启用Binding不能修改或删除"),
     BINDING_PREVIEW_FAILED(42251, HttpStatus.UNPROCESSABLE_ENTITY, "Binding预览失败"),
     BINDING_TEST_REQUIRED(40953, HttpStatus.CONFLICT, "Binding启用前必须测试成功"),
+    MAPPED_DATA_NOT_FOUND(40452, HttpStatus.NOT_FOUND, "未找到映射业务数据"),
 
     INTERNAL_ERROR(50000, HttpStatus.INTERNAL_SERVER_ERROR, "服务内部错误");
 

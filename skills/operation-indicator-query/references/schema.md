@@ -2,7 +2,7 @@
 
 ## 平台对象
 
-- 本体：`管控对象`、`指标定义`、`运营指标观测`。
+- 本体：`ORGANIZATION`（管控对象）、`INDICATOR_DEF`（指标定义）、`INDICATOR_OBSERVATION`（运营指标观测）。
 - Binding：`运管-管控对象绑定`、`运管-指标定义绑定`、`运管-运营指标观测绑定`。
 - 查询前要求目标 Binding 状态为 `ENABLED`，且字段映射包含所需属性编码。
 
@@ -20,4 +20,4 @@
 
 ## 数据边界
 
-平台只保存本体、属性、数据源和 Binding；真实观测数据保留在 `operation_management` 业务库。Skill 使用平台 API Key 获取映射，用专用只读数据库账号执行参数化查询。
+平台保存本体、属性、数据源和 Binding，并由服务端通过启用 Binding 查询真实业务数据。Skill 使用 API Key 调用 `/api/v1/mapped-data/{ontologyId}/records`，不连接业务数据库，不读取数据库凭据，也不执行 SQL。

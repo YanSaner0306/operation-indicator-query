@@ -5,9 +5,14 @@
  */
 package com.biz.ontology.data.query;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface MappedDataQueryService {
     Optional<MappedValue> getPropertyValue(Long ontologyId,Long propertyId,Object businessKey);
+    Optional<MappedRecord> getRecord(Long ontologyId,Object businessKey);
+    List<MappedRecord> findRecords(Long ontologyId,Long propertyId,Object value,int limit);
     record MappedValue(Long bindingId,Long ontologyId,Long propertyId,Object businessKey,Object value){}
+    record MappedRecord(Long bindingId,Long ontologyId,Object businessKey,Map<String,Object> values){}
 }

@@ -31,6 +31,7 @@ com\biz\ontology\api\domain\DomainController.class
 com\biz\ontology\api\ontology\dto\OntologyGraphResponse$Edge.class
 com\biz\ontology\api\domain\dto\CreateDomainRequest.class
 com\biz\ontology\api\rule\dto\RuleConditionResponse.class
+com\biz\ontology\api\data\MappedDataController.class
 com\biz\ontology\api\rule\dto\RuleTestResponse.class
 com\biz\ontology\common\security\BearerTokenAuthenticationFilter.class
 com\biz\ontology\data\service\DataSourceConfigService.class
@@ -142,6 +143,7 @@ com\biz\ontology\rule\repository\RuleVersionRepository.class
 com\biz\ontology\data\binding\model\OntologyFieldBindingEntity.class
 com\biz\ontology\auth\identity\repository\AuthRolePermissionRepository.class
 com\biz\ontology\api\rule\dto\RuleResponse.class
+com\biz\ontology\data\query\MappedDataQueryServiceImpl$BindingContext.class
 com\biz\ontology\api\rule\dto\RuleActionResponse.class
 com\biz\ontology\api\rule\RuleController.class
 com\biz\ontology\api\common\PageResponse.class
@@ -193,6 +195,7 @@ com\biz\ontology\rule\service\RuleExternalReferenceChecker.class
 com\biz\ontology\auth\identity\model\AuthUserEntity.class
 com\biz\ontology\data\connection\DriverManagerConnectionFactory.class
 com\biz\ontology\auth\apiclient\repository\ApiClientRepository.class
+com\biz\ontology\data\query\MappedDataQueryService$MappedRecord.class
 com\biz\ontology\auth\identity\model\AuthStatus.class
 com\biz\ontology\data\binding\validation\BindingValidationService$ValidatedBinding.class
 com\biz\ontology\api\rule\dto\SwitchRuleVersionRequest.class
@@ -221,6 +224,7 @@ com\biz\ontology\api\data\dto\ColumnMetadataResponse.class
 com\biz\ontology\auth\identity\service\RoleService.class
 com\biz\ontology\api\auth\PermissionController.class
 com\biz\ontology\rule\service\RuleTestService.class
+com\biz\ontology\api\data\dto\MappedRecordResponse.class
 com\biz\ontology\api\rule\dto\RuleActionRequest.class
 com\biz\ontology\ontology\repository\OntologyRelationRepository.class
 com\biz\ontology\ontology\model\DomainOntologyRelEntity.class

@@ -35,6 +35,7 @@ D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\BindingVa
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\ColumnMetadataResponse.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\ConnectionTestResponse.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\DataSourceResponse.java
+D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\MappedRecordResponse.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\PreviewRequest.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\PreviewResponse.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\SaveBindingRequest.java
@@ -42,6 +43,7 @@ D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\SaveDataS
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\TableMetadataResponse.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\UpdateBindingStatusRequest.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\dto\UpdateDataSourceStatusRequest.java
+D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\data\MappedDataController.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\domain\DomainController.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\domain\dto\CreateDomainRequest.java
 D:\Java\brrp-main\brrp\api\src\main\java\com\biz\ontology\api\domain\dto\CreateParentDomainRequest.java
