@@ -1,0 +1,11 @@
+/**
+ * 模块14：API Key认证过滤器。
+ * 功能：在Bearer缺失时校验X-API-Key、客户端状态、凭证状态和实时权限，并写入统一SecurityContext。
+ * 技术栈：Spring Security OncePerRequestFilter、HMAC常量时间校验和JSON错误响应。
+ */
+package com.biz.ontology.common.security;
+import com.biz.ontology.api.common.R;import com.biz.ontology.auth.apiclient.service.ApiClientService;import com.biz.ontology.common.exception.*;import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.*;import jakarta.servlet.http.*;import org.springframework.http.MediaType;import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;import org.springframework.security.core.authority.SimpleGrantedAuthority;import org.springframework.security.core.context.SecurityContextHolder;import org.springframework.stereotype.Component;import org.springframework.web.filter.OncePerRequestFilter;
+import java.io.IOException;
+@Component
+public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {private final ApiClientService service;private final ObjectMapper mapper;public ApiKeyAuthenticationFilter(ApiClientService s,ObjectMapper m){service=s;mapper=m;}@Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{String raw=request.getHeader("X-API-Key");if(raw==null||raw.isBlank()||SecurityContextHolder.getContext().getAuthentication()!=null){chain.doFilter(request,response);return;}try{var authenticated=service.authenticate(raw.trim());var client=authenticated.client();PlatformPrincipal principal=new PlatformPrincipal(client.getClientId(),PlatformPrincipal.PrincipalType.API_CLIENT,client.getName(),authenticated.permissions(),authenticated.keyId(),0L);var token=new UsernamePasswordAuthenticationToken(principal,null,authenticated.permissions().stream().map(SimpleGrantedAuthority::new).toList());SecurityContextHolder.getContext().setAuthentication(token);chain.doFilter(request,response);}catch(BusinessException e){SecurityContextHolder.clearContext();response.setStatus(e.getErrorCode().getHttpStatus().value());response.setContentType(MediaType.APPLICATION_JSON_VALUE);mapper.writeValue(response.getOutputStream(),R.error(e.getErrorCode().getResponseCode(),e.getMessage()));}}}

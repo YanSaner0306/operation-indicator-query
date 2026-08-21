@@ -1,0 +1,6 @@
+interface:
+  display_name: "运管指标查询"
+  short_description: "通过本体平台和只读业务库查询企业运管指标数据"
+  default_prompt: "使用 $operation-indicator-query 查询指定企业在指定期间的运管指标，并返回单位与数据依据。"
+policy:
+  allow_implicit_invocation: true

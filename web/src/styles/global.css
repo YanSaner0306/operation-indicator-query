@@ -1,0 +1,112 @@
+:root {
+  color: #1f2937;
+  background: #f4f7fb;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f4f7fb;
+}
+
+.app-header {
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(110deg, #102a43 0%, #164e63 58%, #0f766e 100%);
+  box-shadow: 0 2px 10px rgba(15, 42, 67, 0.2);
+}
+.app-title { color: white !important; font-size: 19px; font-weight: 650; letter-spacing: .02em; }
+.app-version { color: rgba(255,255,255,.66) !important; margin-left: 14px; font-size: 12px; }
+.app-sider { border-right: 1px solid #e5e7eb; }
+.app-content { padding: 24px; background: #f4f7fb; overflow: auto; }
+
+.page-toolbar, .panel-toolbar, .drawer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.page-toolbar { margin-bottom: 16px; }
+.ontology-list-toolbar, .rule-list-toolbar { justify-content: flex-start; }
+.panel-toolbar { justify-content: flex-start; margin-bottom: 14px; }
+.drawer-footer { width: 100%; }
+.ontology-list-card .ant-card-body { padding-top: 18px; }
+.table-name-link { padding-inline: 0 !important; font-weight: 600; }
+.detail-page-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.detail-page-title { display: flex; align-items: baseline; gap: 12px; }
+.detail-page-title .ant-typography { margin: 0; }
+.ontology-base-form { max-width: 900px; }
+.form-span-2 { grid-column: span 2; }
+.detail-meta { max-width: 900px; margin-top: 8px; }
+.detail-form-actions {
+  max-width: 900px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #edf0f4;
+  display: flex;
+  justify-content: flex-end;
+}
+.rule-editor-card, .rule-test-card { max-width: 980px; margin: 0 auto; }
+.rule-editor-steps { max-width: 760px; margin: 4px auto 30px; }
+.rule-step-form { max-width: 760px; margin: 0 auto; }
+.rule-editor-actions {
+  max-width: 760px;
+  margin: 8px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid #edf0f4;
+  display: flex;
+  justify-content: space-between;
+}
+.rule-test-summary { margin-bottom: 18px !important; }
+.rule-test-result-card { min-height: 300px; height: 100%; }
+.rule-test-run-action { display: flex; justify-content: flex-end; }
+.rule-result-panel {
+  min-height: 238px;
+  padding: 18px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.rule-result-panel.matched { border-color: #b7ebc6; background: #f6ffed; }
+.rule-result-lines { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+
+.domain-tree-card { min-height: 450px; }
+.tree-node-title { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; }
+.domain-summary { margin-top: 16px; padding: 12px; border-radius: 8px; background: #f5f8fb; border: 1px solid #e5eaf0; }
+.form-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+
+.ontology-graph { min-height: 280px; }
+.graph-nodes { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.graph-node {
+  min-width: 150px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid #9cc7c4;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #f0fdfa, #ecfeff);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, .08);
+}
+.graph-edges { display: flex; flex-direction: column; gap: 10px; }
+.graph-edge { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; background: #fafafa; border-radius: 8px; }
+.graph-arrow { color: #0f766e; font-weight: 700; }
+.module-card { min-height: 145px; }
+
+@media (max-width: 900px) {
+  .app-content { padding: 16px; }
+  .form-grid-2 { grid-template-columns: 1fr; }
+  .form-span-2 { grid-column: span 1; }
+  .page-toolbar { align-items: flex-start; flex-direction: column; }
+  .detail-page-header, .detail-page-title { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .rule-editor-actions { align-items: flex-start; flex-direction: column; gap: 12px; }
+}

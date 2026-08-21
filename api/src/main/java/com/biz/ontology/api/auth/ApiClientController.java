@@ -1,0 +1,10 @@
+/**
+ * 模块14：API客户端和凭证管理REST接口。
+ * 功能：提供客户端分页、创建、更新、启停、Key创建/轮换和吊销，完整Key仅创建响应出现一次。
+ * 技术栈：Spring MVC、Bean Validation、方法安全与统一响应。
+ */
+package com.biz.ontology.api.auth;
+import com.biz.ontology.api.auth.dto.*;import com.biz.ontology.api.common.*;import com.biz.ontology.auth.apiclient.service.ApiClientService;import com.biz.ontology.auth.identity.model.AuthStatus;
+import jakarta.validation.Valid;import jakarta.validation.constraints.*;import org.springframework.security.access.prepost.PreAuthorize;import org.springframework.validation.annotation.Validated;import org.springframework.web.bind.annotation.*;
+@Validated@RestController@RequestMapping("/api/v1/auth/api-clients")@PreAuthorize("hasAuthority('AUTH_MANAGE')")
+public class ApiClientController {private final ApiClientService service;public ApiClientController(ApiClientService s){service=s;}@GetMapping public R<PageResponse<ApiClientResponse>> page(@RequestParam(required=false)String keyword,@RequestParam(required=false)AuthStatus status,@RequestParam(defaultValue="1")@Min(1)int page,@RequestParam(defaultValue="20")@Min(1)@Max(100)int size){return R.ok(service.page(keyword,status,page,size));}@GetMapping("/{id}")public R<ApiClientResponse> get(@PathVariable Long id){return R.ok(service.get(id));}@PostMapping public R<ApiClientResponse> create(@Valid@RequestBody SaveApiClientRequest r){return R.ok(service.create(r));}@PutMapping("/{id}")public R<ApiClientResponse> update(@PathVariable Long id,@Valid@RequestBody SaveApiClientRequest r){return R.ok(service.update(id,r));}@PatchMapping("/{id}/enabled")public R<ApiClientResponse> status(@PathVariable Long id,@Valid@RequestBody UpdateAuthStatusRequest r){return R.ok(service.status(id,r));}@PostMapping("/{id}/credentials")public R<ApiKeyCreatedResponse> credential(@PathVariable Long id,@RequestBody(required=false)CreateApiKeyRequest r){return R.ok(service.createCredential(id,r==null?new CreateApiKeyRequest(null,true):r));}@PostMapping("/{id}/credentials/{keyId}/revoke")public R<Void> revoke(@PathVariable Long id,@PathVariable String keyId){service.revoke(id,keyId);return R.ok();}}

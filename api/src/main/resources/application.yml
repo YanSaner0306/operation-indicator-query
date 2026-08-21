@@ -1,0 +1,62 @@
+# 模块1/2：API契约、迁移和安全默认值的共享运行时配置。
+# 功能：将密钥/配置文件选择保留在仓库之外，并启用模式验证。
+# 技术栈：Spring Boot外部化配置 + JPA + Flyway。
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: ontology-platform
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+platform:
+  cors:
+    allowed-origins: ${BRRP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    request-id-header: X-Request-Id
+    jwt-secret: ${BRRP_JWT_SECRET}
+    access-token-minutes: ${BRRP_ACCESS_TOKEN_MINUTES:30}
+    refresh-token-days: ${BRRP_REFRESH_TOKEN_DAYS:7}
+    refresh-cookie-secure: ${BRRP_REFRESH_COOKIE_SECURE:true}
+    bootstrap-admin-username: ${BRRP_BOOTSTRAP_ADMIN_USERNAME:admin}
+    bootstrap-admin-password: ${BRRP_BOOTSTRAP_ADMIN_PASSWORD:}
+    api-key-pepper: ${BRRP_API_KEY_PEPPER}
+    api-key-default-days: ${BRRP_API_KEY_DEFAULT_DAYS:180}
+  data-source:
+    encryption-key: ${BRRP_DATASOURCE_ENCRYPTION_KEY}
+    key-version: ${BRRP_DATASOURCE_KEY_VERSION:v1}
+    allowed-hosts: ${BRRP_DATASOURCE_ALLOWED_HOSTS:}
+    allow-private-addresses: ${BRRP_DATASOURCE_ALLOW_PRIVATE:false}
+    connect-timeout-ms: ${BRRP_DATASOURCE_CONNECT_TIMEOUT_MS:5000}
+    query-timeout-seconds: ${BRRP_DATASOURCE_QUERY_TIMEOUT_SECONDS:10}
+    max-pool-size: ${BRRP_DATASOURCE_MAX_POOL_SIZE:5}
+  traffic-control:
+    requests-per-minute: ${BRRP_RATE_LIMIT_PER_MINUTE:60}
+    burst-capacity: ${BRRP_RATE_LIMIT_BURST:20}
+    login-requests-per-minute: ${BRRP_LOGIN_RATE_LIMIT_PER_MINUTE:10}
