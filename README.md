@@ -1,0 +1,269 @@
+# 运管领域设计文档
+
+**版本：** v1.0  
+**日期：** 2026-08-21  
+**适用项目：** 业务本体推理平台 BRRP  
+**实施仓库：** `D:\Java\brrp-main\brrp`
+
+## 1. 范围与非目标
+
+### 1.1 本次范围
+
+- 运管管控对象、指标定义、运营指标观测三类数据的语义化查询。
+- 企业名称、简称、对象编码或对象 ID定位。
+- 指标名称、别名或指标编码定位。
+- 按期间读取本期值、上期值、同比变动额、同比变动率。
+- 通过 Codex Skill 调用平台 API 完成多跳查询。
+- 通过平台 Binding 白名单和参数化 JDBC 查询读取真实业务数据。
+
+### 1.2 非目标
+
+- 不修改现有前端页面和前端调用协议。
+- 不在 Skill 中连接业务数据库，不读取业务数据库用户名、密码、JDBC URL。
+- 不由 Codex 创建或修改业务视图、数据源、Ontology、Binding。
+- 不接受用户传入 SQL、表名、列名、排序或表达式。
+- 当前版本不实现跨多个观测期的趋势分析和自然语言模糊检索。
+
+## 2. 总体方案
+
+### 2.1 责任分层
+
+| 层次 | 组件 | 责任 | 是否访问业务库 |
+|---|---|---|---|
+| 对话层 | Codex | 识别企业、指标、期间和口径，组织最终答案 | 否 |
+| Skill 编排层 | `skills/operation-indicator-query/scripts/query.py` | 调用平台 API，编排对象、指标、观测多跳 | 否 |
+| 平台 API 层 | `MappedDataController` | 鉴权、参数校验、映射记录查询接口 | 间接 |
+| 平台查询服务 | `MappedDataQueryServiceImpl` | 定位启用 Binding，转换属性编码，调用受控执行器 | 是 |
+| 受控执行层 | `BindingQueryExecutor` + `ControlledSelectBuilder` | 只生成白名单 SELECT，使用 PreparedStatement | 是 |
+| 数据配置层 | DataSource、Ontology、Binding、视图 | 由平台管理员和数据人员配置维护 | 是 |
+
+Skill 与业务数据库之间没有直连链路。业务库连接只存在于 BRRP 服务端配置的 DataSource 连接池中。
+
+### 2.2 端到端链路
+
+```text
+Codex问题
+  -> operation-indicator-query Skill
+  -> GET /api/v1/ontologies
+  -> GET /api/v1/ontologies/{id}/properties
+  -> GET /api/v1/bindings?ontologyId={id}&status=ENABLED
+  -> GET /api/v1/mapped-data/{objectOntologyId}/records?propertyId=...&value=...
+  -> GET /api/v1/mapped-data/{indicatorOntologyId}/records?propertyId=...&value=...
+  -> GET /api/v1/mapped-data/{observationOntologyId}/records/{period|objectId|indicatorCode}
+  -> Skill组织指标结果
+```
+
+前三类元数据 API 用于发现本体、属性和启用 Binding；后三个映射数据 API 是实际业务多跳。每个 API 请求均通过 `X-API-Key` 认证，API Client 至少需要 `ONTOLOGY_VIEW` 和 `BINDING_VIEW`。
+
+## 4. 运管语义模型
+
+### 4.1 本体基线
+
+| 业务对象 | 本体编码 | 当前平台 ID | 唯一业务键 | 说明 |
+|---|---|---:|---|---|
+| 管控对象 | `ORGANIZATION` | 1 | `OBJECT_ID` | 企业、集团、子公司或虚拟节点 |
+| 指标定义 | `INDICATOR_DEF` | 2 | `INDICATOR_CODE` | 指标编码、名称、分类、类型、单位 |
+| 运营指标观测 | `INDICATOR_OBSERVATION` | 3 | `OBSERVATION_KEY` | 期间、对象、指标及数值 |
+
+### 4.2 观测唯一性
+
+观测唯一键定义为：
+
+```text
+OBSERVATION_KEY = PERIOD + "|" + OBJECT_ID + "|" + INDICATOR_CODE
+```
+
+例如：`2026-07|0|IND_095`。同一 `(PERIOD, OBJECT_ID, INDICATOR_CODE)` 不允许出现两条有效记录。`YOY_RATE` 在数据中保存为小数 `0.0791`，展示为 `7.91%` 时才乘以 100。
+
+### 4.3 当前属性编码
+
+对象本体至少需要：`OBJECT_ID`、`OBJECT_CODE`、`OBJECT_NAME`、`SHORT_NAME`。指标本体至少需要：`INDICATOR_CODE`、`INDICATOR_NAME`、`UNIT`。观测本体至少需要：`OBSERVATION_KEY`、`PERIOD`、`OBJECT_ID`、`INDICATOR_CODE`、`UNIT`、`CURRENT_VALUE`、`PREVIOUS_VALUE`、`YOY_AMOUNT`、`YOY_RATE`。
+
+## 5. Key-Value 数据处理方案
+
+### 5.1 问题
+
+业务源数据可能是 `attribute_key`/`attribute_value` 形式。同一列的值可能同时表示期间、企业、指标或数值属性，不能直接把该列绑定到一个本体属性，否则 Binding 映射会失去语义稳定性，也无法保证字段类型和唯一键约束。
+
+### 5.2 推荐方案：由数据人员提供规范视图
+
+数据人员在业务数据库中维护源表和视图，BRRP 只绑定视图。视图应将 Key-Value 数据透视成“一行一条观测”，并暴露稳定、明确、可筛选的列：
+
+```text
+observation_key, period, object_id, object_code, object_name,
+indicator_code, indicator_name, category, indicator_type, unit,
+current_value, previous_value, yoy_amount, yoy_rate
+```
+
+当前平台已经使用 `v_operation_indicator_observation` 作为观测 Binding 的物理对象。该视图不是由 Codex 创建，数据人员负责其刷新、权限、索引和唯一性保证。
+
+### 5.3 视图设计要求
+
+1. 视图列名固定，避免随业务源表字段变化而改变。
+2. `observation_key` 必须可唯一定位一条记录。
+3. `period`、`object_id`、`indicator_code` 不应为空。
+4. 数值列统一为可转换为 DECIMAL 的类型，空值保持 NULL，不用 0 代替。
+5. 视图应在 `(period, object_id, indicator_code)` 或等价键上具备可接受查询性能。
+6. 视图不包含写入逻辑，平台查询账号只需要 SELECT 权限。
+
+### 5.4 不推荐方案
+
+不建议在 Skill 中解析原始 Key-Value 表，不建议把数据库账号放入 Skill，也不建议在后端增加任意 SQL 透传接口。这样会绕过平台 Binding 的白名单、审计和权限边界。
+
+## 6. 后端实现说明
+
+### 6.1 新增映射数据 API
+
+实现文件：`api/src/main/java/com/biz/ontology/api/data/MappedDataController.java`。
+
+```text
+GET /api/v1/mapped-data/{ontologyId}/records/{businessKey}
+GET /api/v1/mapped-data/{ontologyId}/records
+    ?propertyId={propertyId}&value={value}&limit={1..100}
+```
+
+单记录接口按启用 Binding 的唯一键查询；筛选接口按某个已映射本体属性查询多条记录，`limit` 服务端限制为 1 至 100。接口返回平台属性编码到值的映射，不返回 SQL、数据库凭据或物理连接信息。
+
+### 6.2 Binding 受控查询
+
+实现文件：
+
+- `MappedDataQueryServiceImpl.java`
+- `BindingQueryExecutor.java`
+- `ControlledSelectBuilder.java`
+
+服务流程如下：
+
+1. 查询目标本体下状态为 `ENABLED` 且未删除的 Binding。
+2. 要求唯一 Binding；多条候选返回 `BINDING_AMBIGUOUS`。
+3. 读取 Binding 中的字段映射和固定过滤条件。
+4. 由平台属性 ID反查属性编码。
+5. 由 `ControlledSelectBuilder` 仅使用持久化的表名、列名和过滤元数据生成 SELECT。
+6. 业务值通过 PreparedStatement 参数绑定。
+7. 由受限数据源连接池执行查询，设置查询超时和最大行数。
+
+因此，平台后端确实会访问业务库，但访问入口是“启用 Binding + 受控查询执行器”，而不是外部 Skill 直连。
+
+### 6.3 鉴权与权限
+
+请求头：
+
+```text
+X-API-Key: <平台签发的 API Key>
+```
+
+映射数据 Controller 使用方法级权限：`ONTOLOGY_VIEW` 与 `BINDING_VIEW` 同时满足才允许查询。API Key 只保存在运行时环境变量或本地受保护文件中，不写入答案、日志或仓库。
+
+## 7. 多跳查询具体实现位置
+
+### 7.1 Skill 中的多跳编排
+
+实现文件：`skills/operation-indicator-query/scripts/query.py`。
+
+| 跳次 | 方法 | 输入 | 输出 |
+|---:|---|---|---|
+| 0 | `OperationQueryService._ontology` | 本体编码 | 唯一启用本体及 ID |
+| 1 | `OperationQueryService._schema` | 本体 ID | 属性编码到属性 ID 的缓存 |
+| 2 | `resolve_object` / `_resolve` | 企业原文 | 唯一管控对象记录 |
+| 3 | `resolve_indicator` / `_resolve` | 指标原文或别名 | 唯一指标定义记录 |
+| 4 | `_find_observation` | 对象 ID、指标编码、期间 | 唯一观测记录 |
+| 5 | `query` | measure | 统一结果对象 |
+
+其中 `_resolve` 通过平台筛选接口查找对象或指标；`_find_observation` 优先使用观测唯一键模板直接取记录，未指定期间时按指标编码筛选后再按对象 ID和最新期间收敛。所有跳次都调用 `PlatformClient.request`，没有 JDBC、SQL 或数据库驱动依赖。
+
+### 7.2 平台后端中的“单跳”执行
+
+Skill 的每一次映射 API 调用都会触发平台内部的一次受控查询。以观测唯一键为例：
+
+```text
+Skill -> MappedDataController.get
+     -> MappedDataQueryServiceImpl.getRecord
+     -> BindingService.mappings / conditions
+     -> DataSourceConfigService.requireEntity
+     -> BindingQueryExecutor.queryOne
+     -> ControlledSelectBuilder.build
+     -> PreparedStatement.executeQuery
+```
+
+因此“多跳”不是把 SQL 拼到 Skill 中，而是由 Skill 编排多个语义 API，平台在每一跳内部依据 Binding 完成一次受控数据库读取。
+
+### 7.3 当前匹配语义
+
+当前实现使用属性值精确匹配，支持对象 ID、对象编码、对象名称、简称，以及指标编码、指标名称和别名。若同一输入命中多个候选，返回歧义错误并携带候选；不会静默选择。模糊包含匹配和跨层级关系遍历属于后续增强，不应在当前文档中视为已实现能力。
+
+## 8. Skill 使用与配置
+
+配置脚本：`skills/operation-indicator-query/scripts/configure.ps1`。配置只包含平台地址、API Key 来源、本体编码、属性编码和观测键模板，不包含数据库主机、数据库名、用户名或密码。
+
+典型调用：
+
+```powershell
+python scripts/query.py query `
+  --object "四川省蜀盛产业投资集团有限公司" `
+  --indicator "净资产收益率" `
+  --period "2026-07" `
+  --measure current_value `
+  --json
+```
+
+支持口径：`current_value`、`previous_value`、`yoy_amount`、`yoy_rate`。未指定口径默认查询 `current_value`，未指定期间则选择该对象和指标的最新有效期间。
+
+## 9. 限流、重试与故障处理
+
+`RateLimitFilter` 按 API Key、Bearer 摘要或来源 IP 使用内存令牌桶。当前配置默认值为普通 API `200` 次/分钟、突发容量 `200`，登录 `100` 次/分钟；可通过 `BRRP_RATE_LIMIT_PER_MINUTE`、`BRRP_RATE_LIMIT_BURST` 和 `BRRP_LOGIN_RATE_LIMIT_PER_MINUTE` 调整。
+
+Skill 收到 HTTP 429 时最多重试两次，采用短暂指数退避；仍失败则返回平台限流错误，不绕过平台直接访问数据库。生产环境应结合并发量和 API Key 数量设置限流，不建议无限放大。
+
+## 10. 数据人员与平台管理员操作清单
+
+### 数据人员
+
+- 提供对象、指标和观测的稳定源表或视图。
+- 对 Key-Value 源数据提供透视视图，当前观测视图名称为 `v_operation_indicator_observation`。
+- 保证观测唯一键、字段类型、NULL语义和查询索引。
+- 给平台数据源账号授予最小 SELECT 权限。
+- 变更视图列名时先同步修改 Binding，不直接修改 Skill。
+
+### 平台管理员
+
+- 在平台创建或维护三个本体及属性编码。
+- 创建 DataSource，配置业务库连接并限制允许主机。
+- 创建三套 Binding，维护唯一键和字段映射。
+- 测试 Binding 成功后再启用，确保同一本体不存在多个冲突的启用 Binding。
+- 为 API Client 授予 `ONTOLOGY_VIEW`、`BINDING_VIEW`。
+
+### Codex/Skill
+
+- 只负责调用平台 API 和回答用户问题。
+- 不同步 MOCK 数据，除非用户明确要求。
+- 不创建本体、Binding、DataSource 或数据库视图。
+
+## 11. 验收方案
+
+运行：
+
+```powershell
+python skills/operation-indicator-query/scripts/acceptance.py
+```
+
+验收至少包括：
+
+1. `doctor` 检查三个本体和唯一启用 Binding。
+2. 企业全称 + 指标别名查询本期值 `53.9`。
+3. 企业编码 + 指标编码查询本期值。
+4. 企业简称 + `ROE` + 最新期间查询。
+5. 查询上期值 `49.95`、同比额 `3.95`、同比率 `0.0791`。
+6. 歧义指标返回候选而不是随机选择。
+7. 注入样式企业名不命中。
+8. 全过程不读取业务数据库凭据、不执行本地 SQL。
+
+## 12. 已知限制与后续演进
+
+- 当前 Skill 通过 API 多跳完成串行查询；可在不改变后端合同的情况下增加缓存和批量属性查询，减少重复元数据请求。
+- 当前对象和指标解析为精确匹配；如需包含匹配，应新增明确的后端查询语义和分页合同，不应退回 SQL 透传。
+- 当前观测默认按单一期间查询；趋势、同比跨期计算应由平台规则或专用语义接口承担。
+- 若业务源数据仍存在多种 Key-Value 结构，优先增加数据层视图或物化视图，不把结构清洗逻辑放进 Skill。
+
+## 13. 交付基线
+
+本设计对应的代码交付包括：映射数据 Controller/DTO、映射查询服务扩展、Binding 批量只读执行、API-only 运管 Skill、API 验收脚本、限流退避和配置文档。后端 Maven 编译通过，使用 MySQL `dev` profile 启动通过，8080 端口已完成真实 API 多跳查询验证。
